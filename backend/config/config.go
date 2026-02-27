@@ -48,10 +48,9 @@ func Load() *Config {
 		},
 	}
 }
-
 func getEnv(key, def string) string {
-	if ok := os.Getenv(key); ok != "" {
-		return def
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-	return key
+	return def
 }

@@ -27,7 +27,7 @@ type AuthUseCase struct {
 	jwt       jwt.Manager
 }
 
-func New(
+func NewAuthUseCase(
 	userRepo repository.UserRepository,
 	tokenRepo repository.TokenRepository,
 	jwt jwt.Manager,

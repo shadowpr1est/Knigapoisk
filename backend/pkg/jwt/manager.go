@@ -23,7 +23,7 @@ type manager struct {
 	ttl       time.Duration
 }
 
-func New(secretKey string, ttl time.Duration) Manager {
+func NewManager(secretKey string, ttl time.Duration) Manager {
 	return &manager{
 		secretKey: secretKey,
 		ttl:       ttl,
