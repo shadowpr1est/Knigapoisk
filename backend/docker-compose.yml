@@ -1,0 +1,184 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  db-init:
+    image: postgres:15
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+    command: |
+      bash -lc '
+      set -euo pipefail
+      echo "waiting for postgres..."
+      until pg_isready -h postgres -U "$POSTGRES_USER" -d postgres; do sleep 1; done
+      echo "creating databases if missing..."
+      psql -h postgres -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 <<SQL
+      SELECT '\''CREATE DATABASE auth'\''
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\''auth'\'') \gexec
+      ;
+      SELECT '\''CREATE DATABASE books'\''
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\''books'\'') \gexec
+      ;
+      SELECT '\''CREATE DATABASE files'\''
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\''files'\'') \gexec
+      ;
+      SELECT '\''CREATE DATABASE reading'\''
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\''reading'\'') \gexec
+      ;
+      SELECT '\''CREATE DATABASE reviews'\''
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\''reviews'\'') \gexec
+      ;
+      SQL
+      echo "db-init done"
+      '
+    restart: "no"
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    entrypoint: ["/bin/sh", "-lc"]
+    command: |
+      set -e
+      echo "waiting for minio..."
+      until mc alias set local "http://${MINIO_ENDPOINT}" "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null 2>&1; do sleep 1; done
+      mc mb -p "local/${MINIO_BUCKET}" || true
+      echo "minio-init done"
+    restart: "no"
+
+  auth-service:
+    build: ./services/auth-service
+    restart: unless-stopped
+    environment:
+      GRPC_PORT: "0.0.0.0:9091"
+      POSTGRES_DSN: ${AUTH_POSTGRES_DSN}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "9091:9091"
+
+  book-service:
+    build: ./services/book-service
+    restart: unless-stopped
+    environment:
+      GRPC_PORT: "0.0.0.0:9092"
+      POSTGRES_DSN: ${BOOK_POSTGRES_DSN}
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "9092:9092"
+
+  file-service:
+    build: ./services/file-service
+    restart: unless-stopped
+    environment:
+      GRPC_PORT: "0.0.0.0:9093"
+      POSTGRES_DSN: ${FILE_POSTGRES_DSN}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "9093:9093"
+
+  reading-service:
+    build: ./services/reading-service
+    restart: unless-stopped
+    environment:
+      GRPC_PORT: "0.0.0.0:9094"
+      POSTGRES_DSN: ${READING_POSTGRES_DSN}
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "9094:9094"
+
+  review-service:
+    build: ./services/review-service
+    restart: unless-stopped
+    environment:
+      GRPC_PORT: "0.0.0.0:9095"
+      POSTGRES_DSN: ${REVIEW_POSTGRES_DSN}
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "9095:9095"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./services/api-gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: ":8080"
+      AUTH_SERVICE_ADDR: "auth-service:9091"
+      BOOK_SERVICE_ADDR: "book-service:9092"
+      FILE_SERVICE_ADDR: "file-service:9093"
+      READING_SERVICE_ADDR: "reading-service:9094"
+      REVIEW_SERVICE_ADDR: "review-service:9095"
+    depends_on:
+      - auth-service
+      - book-service
+      - file-service
+      - reading-service
+      - review-service
+    ports:
+      - "8080:8080"
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.17.14
+    restart: unless-stopped
+    environment:
+      API_URL: "http://localhost:8080/openapi.yaml"
+    depends_on:
+      - api-gateway
+    ports:
+      - "8081:8080"
+
+volumes:
+  postgres_data:
+  minio_data:
+

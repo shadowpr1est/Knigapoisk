@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/shadowpr1est/knigapoisk-auth-service/api/proto;authpb";
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc Validate(ValidateRequest) returns (ValidateResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message RegisterRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message ValidateRequest {
+  string access_token = 1;
+}
+
+message ValidateResponse {
+  bool valid = 1;
+  int64 user_id = 2;
+  string role = 3;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}
+

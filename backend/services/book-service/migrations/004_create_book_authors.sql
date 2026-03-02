@@ -1,0 +1,10 @@
+-- +goose Up
+CREATE TABLE IF NOT EXISTS book_authors (
+    book_id BIGINT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    author_id BIGINT NOT NULL REFERENCES authors(id) ON DELETE CASCADE,
+    PRIMARY KEY (book_id, author_id)
+);
+
+-- +goose Down
+DROP TABLE IF EXISTS book_authors;
+

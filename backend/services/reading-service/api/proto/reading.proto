@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package reading;
+
+option go_package = "github.com/shadowpr1est/knigapoisk-reading-service/api/proto;readingpb";
+
+service ReadingService {
+  rpc SaveProgress(SaveProgressRequest) returns (SaveProgressResponse);
+  rpc GetProgress(GetProgressRequest) returns (GetProgressResponse);
+  rpc AddBookmark(AddBookmarkRequest) returns (AddBookmarkResponse);
+  rpc GetBookmarks(GetBookmarksRequest) returns (GetBookmarksResponse);
+  rpc DeleteBookmark(DeleteBookmarkRequest) returns (DeleteBookmarkResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message ReadingProgress {
+  int64 id = 1;
+  int64 user_id = 2;
+  int64 book_id = 3;
+  int64 file_id = 4;
+  int32 page = 5;
+  double percentage = 6;
+  string updated_at = 7;
+}
+
+message Bookmark {
+  int64 id = 1;
+  int64 user_id = 2;
+  int64 book_id = 3;
+  int32 page = 4;
+  string note = 5;
+  string created_at = 6;
+}
+
+message SaveProgressRequest {
+  int64 user_id = 1;
+  int64 book_id = 2;
+  int64 file_id = 3;
+  int32 page = 4;
+  double percentage = 5;
+}
+
+message SaveProgressResponse {
+  bool success = 1;
+}
+
+message GetProgressRequest {
+  int64 user_id = 1;
+  int64 book_id = 2;
+}
+
+message GetProgressResponse {
+  ReadingProgress progress = 1;
+}
+
+message AddBookmarkRequest {
+  int64 user_id = 1;
+  int64 book_id = 2;
+  int32 page = 3;
+  string note = 4;
+}
+
+message AddBookmarkResponse {
+  Bookmark bookmark = 1;
+}
+
+message GetBookmarksRequest {
+  int64 user_id = 1;
+  int64 book_id = 2;
+}
+
+message GetBookmarksResponse {
+  repeated Bookmark bookmarks = 1;
+}
+
+message DeleteBookmarkRequest {
+  int64 user_id = 1;
+  int64 bookmark_id = 2;
+}
+
+message DeleteBookmarkResponse {
+  bool success = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}
+

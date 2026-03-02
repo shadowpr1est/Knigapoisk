@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "github.com/shadowpr1est/knigapoisk-file-service/api/proto;filepb";
+
+service FileService {
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
+  rpc GetFile(GetFileRequest) returns (GetFileResponse);
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+enum FileFormat {
+  FILE_FORMAT_UNSPECIFIED = 0;
+  FILE_FORMAT_PDF = 1;
+  FILE_FORMAT_EPUB = 2;
+}
+
+message File {
+  int64 id = 1;
+  int64 book_id = 2;
+  FileFormat format = 3;
+  string storage_key = 4;
+  int64 size_bytes = 5;
+  string uploaded_at = 6;
+  string checksum = 7;
+}
+
+message UploadFileRequest {
+  int64 book_id = 1;
+  FileFormat format = 2;
+  bytes data = 3;
+}
+
+message UploadFileResponse {
+  File file = 1;
+}
+
+message GetFileRequest {
+  int64 id = 1;
+}
+
+message GetFileResponse {
+  File file = 1;
+  bytes data = 2;
+}
+
+message DeleteFileRequest {
+  int64 id = 1;
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}
+

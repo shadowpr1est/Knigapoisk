@@ -1,0 +1,210 @@
+openapi: 3.0.3
+info:
+  title: Knigapoisk API Gateway
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8080
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - BearerAuth: []
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, username, password]
+              properties:
+                email: { type: string, format: email }
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "201":
+          description: Created
+  /api/v1/auth/login:
+    post:
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200":
+          description: OK
+  /api/v1/auth/refresh:
+    post:
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200":
+          description: OK
+  /api/v1/books:
+    get:
+      tags: [books]
+      security: []  # public
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [books]
+      responses:
+        "200": { description: OK }
+  /api/v1/books/{id}:
+    get:
+      tags: [books]
+      security: []  # public
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [books]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+    delete:
+      tags: [books]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+  /api/v1/files/upload:
+    post:
+      tags: [files]
+      responses:
+        "200": { description: OK }
+  /api/v1/files/{id}:
+    get:
+      tags: [files]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+  /api/v1/reading/progress:
+    post:
+      tags: [reading]
+      responses:
+        "200": { description: OK }
+  /api/v1/reading/progress/{bookID}:
+    get:
+      tags: [reading]
+      parameters:
+        - in: path
+          name: bookID
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+  /api/v1/reading/bookmarks:
+    post:
+      tags: [reading]
+      responses:
+        "200": { description: OK }
+  /api/v1/reading/bookmarks/{bookID}:
+    get:
+      tags: [reading]
+      parameters:
+        - in: path
+          name: bookID
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+  /api/v1/reading/bookmarks/{id}:
+    delete:
+      tags: [reading]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+  /api/v1/reviews/{bookID}:
+    get:
+      tags: [reviews]
+      security: []  # public
+      parameters:
+        - in: path
+          name: bookID
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+  /api/v1/reviews:
+    post:
+      tags: [reviews]
+      responses:
+        "200": { description: OK }
+  /api/v1/reviews/{id}:
+    put:
+      tags: [reviews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+    delete:
+      tags: [reviews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
+  /api/v1/reviews/{bookID}/rating:
+    get:
+      tags: [reviews]
+      security: []  # public
+      parameters:
+        - in: path
+          name: bookID
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: OK }
